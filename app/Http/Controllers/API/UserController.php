@@ -24,7 +24,7 @@ class UserController extends Controller
 
     public function fetch(Request $request)
     {
-        return ResponseFormatter::success($request->user(), 'Success get user profile');
+        return ResponseFormatter::success(new UserResource($request->user()), 'Success get user profile');
     }
 
     public function login(Request $request)
@@ -70,7 +70,7 @@ class UserController extends Controller
         return ResponseFormatter::success([
             'access_token' => $tokenResult,
             'token_type' => 'Bearer',
-            'user' => $user
+            'user' => new UserResource($user),
         ], 'Authenticated');
     }
 
