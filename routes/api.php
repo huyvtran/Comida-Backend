@@ -18,12 +18,12 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [UserController::class, 'login']);
     Route::post('register', [UserController::class, 'register']);
     Route::post('verify', [UserController::class, 'verify']);
+    Route::post('password/send', [UserController::class, 'sendReset']);
+    Route::put('password/reset', [UserController::class, 'resetPassword']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [UserController::class, 'fetch']);
     Route::post('logout', [UserController::class, 'logout']);
-    Route::post('password/send', [UserController::class, 'sendReset']);
-    Route::put('password/reset', [UserController::class, 'resetPassword']);
     Route::put('profile/update', [UserController::class, 'updateProfile']);
 });
