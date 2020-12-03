@@ -138,7 +138,7 @@ class UserController extends Controller
     public function verification(Request $request)
     {
         $validate = Validator::make($request->all(), [
-            'email' => ['required', 'string', 'email', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
         ]);
 
         if ($validate->errors()->count() != 0) {
@@ -148,13 +148,13 @@ class UserController extends Controller
             ], 'Validation Errors', 500);
         }
 
-    	$verfication = VerificationSession::create([
+    	$verification = VerificationSession::create([
             'email' => $request->email,
             'code' => rand(1111, 9999),
             'expired_at' => Carbon::now()->addHour(),
         ]);
 
-        Mail::to($request->email)->send(new SendVerificationCode($request->name, $verfication->code));
+        Mail::to($request->email)->send(new SendVerificationCode($request->name, $verification->code));
 
 		return ResponseFormatter::success('Success', 'Verification Code Sent');
     }
