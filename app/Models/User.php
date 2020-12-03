@@ -62,9 +62,4 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Models\UserAddress');
     }
-
-    public function verificationCode()
-    {
-        return $this->hasMany('App\Models\VerificationCode');
-    }
 }

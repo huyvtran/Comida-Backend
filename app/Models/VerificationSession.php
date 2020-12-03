@@ -12,11 +12,6 @@ class VerificationSession extends Model
     public $table = 'public.verification_sessions';
 
     protected $fillable = [
-        'user_id', 'code', 'expired_at',
+        'email', 'code', 'expired_at',
     ];
-
-    public function user()
-    {
-        return $this->belongsTo('App\Models\User');
-    }
 }

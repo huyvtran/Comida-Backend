@@ -22,7 +22,7 @@ class UserController extends Controller
 {
     use PasswordValidationRules;
 
-    public function fetch(Request $request)
+    public function index(Request $request)
     {
         return ResponseFormatter::success(new UserResource($request->user()), 'Success get user profile');
     }
@@ -82,6 +82,7 @@ class UserController extends Controller
             'password' => $this->passwordRules(),
             'phone_number' => ['required', 'string', 'min:9', 'max:16', 'unique:users'],
             'address' => ['required', 'string', 'min:9'],
+            'code' => ['required', 'string', 'size:4'],
         ]);
 
         if ($validate->errors()->count() != 0) {
@@ -91,49 +92,8 @@ class UserController extends Controller
             ], 'Validation Errors', 500);
         }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone_number' => $request->phone_number,
-        ]);
-
-        UserAddress::create([
-            'user_id' => $user->id,
-            'type' => "Home",
-            'address' => $request->address,
-        ]);
-
-        $verfication = VerificationSession::create([
-            'user_id' => $user->id,
-            'code' => rand(0000, 9999),
-            'expired_at' => Carbon::now()->addHour(),
-        ]);
-
-        Mail::to($user->email)->send(new SendVerificationCode($user->name, $verfication->code));
-
-        return ResponseFormatter::success([
-            'access_token' => null,
-            'token_type' => null,
-            'user' => new UserResource($user),
-        ], 'User Registered');
-    }
-
-    public function verify(Request $request)
-    {
-        $validate = Validator::make($request->all(), [
-            'code' => ['required', 'string', 'size:4'],
-        ]);
-
-        if ($validate->errors()->count() != 0) {
-            return ResponseFormatter::error([
-                'message' => 'Something went wrong',
-                'error' => $validate->errors(),
-            ], 'VeValidation Errors', 500);
-        }
-
         $matchCode = VerificationSession::where([
-            ['user_id', '=', $request->user_id],
+            ['email', '=', $request->email],
             ['code', '=', $request->code],
         ])->first();
 
@@ -150,11 +110,21 @@ class UserController extends Controller
             ], 'Verification Failed', 422);
         }
 
-        $user = User::find($request->user_id);
-        $user->email_verified_at = Carbon::now();
-        $user->save();
-
         $matchCode->delete();
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'email_verified_at' => $request->email_verified_at,
+            'password' => Hash::make($request->password),
+            'phone_number' => $request->phone_number,
+        ]);
+
+        UserAddress::create([
+            'user_id' => $user->id,
+            'type' => "Home",
+            'address' => $request->address,
+        ]);
 
         $tokenResult = $user->createToken('authToken')->plainTextToken;
 
@@ -162,7 +132,31 @@ class UserController extends Controller
             'access_token' => $tokenResult,
             'token_type' => 'Bearer',
             'user' => new UserResource($user),
-        ], 'User Verified');
+        ], 'User Registered');
+    }
+
+    public function verification(Request $request)
+    {
+        $validate = Validator::make($request->all(), [
+            'email' => ['required', 'string', 'email', 'max:255'],
+        ]);
+
+        if ($validate->errors()->count() != 0) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $validate->errors(),
+            ], 'Validation Errors', 500);
+        }
+
+    	$verfication = VerificationSession::create([
+            'email' => $request->email,
+            'code' => rand(1111, 9999),
+            'expired_at' => Carbon::now()->addHour(),
+        ]);
+
+        Mail::to($request->email)->send(new SendVerificationCode($request->name, $verfication->code));
+
+		return ResponseFormatter::success('Success', 'Verification Code Sent');
     }
 
     public function logout(Request $request)
@@ -172,7 +166,7 @@ class UserController extends Controller
         return ResponseFormatter::success($token, 'Token Revoked');
     }
 
-    public function sendReset(Request $request)
+    public function send(Request $request)
     {
         $validate = Validator::make($request->all(), [
             'email' => ['required', 'string', 'email', 'max:255'],
@@ -195,7 +189,7 @@ class UserController extends Controller
         }
 
         $token = $user->createToken('resetToken')->plainTextToken;
-        $deepLink = 'https://tinyurl.com/y5s44ryj?token='.$token;
+        $deepLink = 'comida://app/reset/password?token='.$token;
 
         Mail::to($user->email)->send(new SendResetPasswordDeepLink($user->name, $deepLink));
 
@@ -205,7 +199,7 @@ class UserController extends Controller
         ], 'Reset Password Sent');
     }
 
-    public function resetPassword(Request $request)
+    public function reset(Request $request)
     {
         $validate = Validator::make($request->all(), [
             'password' => $this->passwordRules(),
@@ -234,11 +228,10 @@ class UserController extends Controller
         return ResponseFormatter::success('Congratulations', 'Password Has Been Reset');
     }
 
-    public function updateProfile(Request $request)
+    public function update(Request $request)
     {
         $validate = Validator::make($request->all(), [
             'name' => ['required', 'string', 'min:3', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$request->id],
             'phone_number' => ['required', 'string', 'min:9', 'max:16', 'unique:users,email,'.$request->id],
             'address' => ['required', 'string', 'min:9'],
         ]);
@@ -250,11 +243,21 @@ class UserController extends Controller
             ], 'Validation Errors', 500);
         }
 
-        $data = $request->all();
-
         $user = Auth::user();
-        $user->update($data);
 
-        return ResponseFormatter::success($user,'Profile Updated');
+        if (!$user) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => 'User not found',
+            ], 'Authentication Failed', 400);
+        }
+
+        $user->update([
+            'name' => $request->name,
+            'phone_number' => $request->phone_number,
+            'address' => $request->address,
+        ]);
+
+        return ResponseFormatter::success($user, 'Profile Updated');
     }
 }

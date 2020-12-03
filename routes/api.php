@@ -17,13 +17,13 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function () {
     Route::post('login', [UserController::class, 'login']);
     Route::post('register', [UserController::class, 'register']);
-    Route::post('verify', [UserController::class, 'verify']);
-    Route::post('password/send', [UserController::class, 'sendReset']);
-    Route::put('password/reset', [UserController::class, 'resetPassword']);
+    Route::post('verification', [UserController::class, 'verification']);
+    Route::post('password/send', [UserController::class, 'send']);
+    Route::put('password/reset', [UserController::class, 'reset']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('user', [UserController::class, 'fetch']);
+    Route::get('user', [UserController::class, 'index']);
     Route::post('logout', [UserController::class, 'logout']);
-    Route::put('profile/update', [UserController::class, 'updateProfile']);
+    Route::put('profile/update', [UserController::class, 'update']);
 });

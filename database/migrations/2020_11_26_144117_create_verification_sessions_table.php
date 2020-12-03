@@ -15,12 +15,10 @@ class CreateVerificationSessionsTable extends Migration
     {
         Schema::create('verification_sessions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id');
+            $table->string('email');
             $table->char('code', 6);
             $table->timestamp('expired_at');
             $table->timestamps();
-
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnUpdate()->cascadeOnDelete();
         });
     }
 
