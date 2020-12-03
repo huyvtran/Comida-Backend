@@ -117,7 +117,7 @@ class UserController extends Controller
             'email' => $request->email,
             'email_verified_at' => Carbon::now(),
             'password' => Hash::make($request->password),
-            'phone_number' => $request->phone_number,
+            'phone_number' => str_replace("-", "", $request->phone_number),
         ]);
 
         UserAddress::create([
