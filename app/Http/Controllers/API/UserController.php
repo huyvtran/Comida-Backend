@@ -232,7 +232,7 @@ class UserController extends Controller
     {
         $validate = Validator::make($request->all(), [
             'name' => ['required', 'string', 'min:3', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email' => ['required', 'string', 'email', 'max:255'],
         ]);
 
         if ($validate->errors()->count() != 0) {
@@ -242,12 +242,18 @@ class UserController extends Controller
             ], 'Validation Errors', 500);
         }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-        ]);
+        $user = User::where('email', $request->email)->first();
 
-        return ResponseFormatter::success(new UserResource($user), 'User Registered');
+        if (!$user) {
+	        $userCreated = User::create([
+	            'name' => $request->name,
+	            'email' => $request->email,
+	        ]);
+
+	        return ResponseFormatter::success(new UserResource($userCreated), 'User Registered');
+        }
+
+		return ResponseFormatter::success(new UserResource($user), 'User Found');
     }
 
     public function update(Request $request)
