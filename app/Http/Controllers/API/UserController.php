@@ -228,6 +228,28 @@ class UserController extends Controller
         return ResponseFormatter::success('Congratulations', 'Password Has Been Reset');
     }
 
+    public function social(Request $request)
+    {
+        $validate = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'min:3', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+        ]);
+
+        if ($validate->errors()->count() != 0) {
+            return ResponseFormatter::error([
+                'message' => 'Something went wrong',
+                'error' => $validate->errors(),
+            ], 'Validation Errors', 500);
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+        ]);
+
+        return ResponseFormatter::success(new UserResource($user), 'User Registered');
+    }
+
     public function update(Request $request)
     {
         $validate = Validator::make($request->all(), [
