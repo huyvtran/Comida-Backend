@@ -180,7 +180,7 @@ class UserController extends Controller
             ], 'Validation Errors', 500);
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->whereNotNull('password')->first();
 
         if (!$user) {
             return ResponseFormatter::error([
