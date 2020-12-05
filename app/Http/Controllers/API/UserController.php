@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Actions\Fortify\PasswordValidationRules;
+use App\Helpers\DynamicLinkGenerator;
 use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
@@ -189,7 +190,7 @@ class UserController extends Controller
         }
 
         $token = $user->createToken('resetToken')->plainTextToken;
-        $deepLink = 'comida://app/reset/password?token='.$token;
+        $deepLink = DynamicLinkGenerator::create($token)->shortLink;
 
         Mail::to($user->email)->send(new SendResetPasswordDeepLink($user->name, $deepLink));
 
@@ -212,12 +213,12 @@ class UserController extends Controller
             ], 'Validation Errors', 500);
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = $request->user();
 
         if (!$user) {
             return ResponseFormatter::error([
                 'message' => 'Something went wrong',
-                'error' => 'Email is not registered',
+                'error' => 'User not found',
             ], 'Authentication Failed', 400);
         }
 
