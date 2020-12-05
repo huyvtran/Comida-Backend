@@ -213,7 +213,7 @@ class UserController extends Controller
             ], 'Validation Errors', 500);
         }
 
-        $user = $request->user();
+        $user = User::find($request->id);
 
         if (!$user) {
             return ResponseFormatter::error([
@@ -222,9 +222,8 @@ class UserController extends Controller
             ], 'Authentication Failed', 400);
         }
 
-        User::where('email', $user->email)->update([
-            'password' => Hash::make($request->password),
-        ]);
+        $user->password = Hash::make($request->password);
+        $user->save();
 
         return ResponseFormatter::success('Congratulations', 'Password Has Been Reset');
     }
