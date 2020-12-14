@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,4 +28,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [UserController::class, 'index']);
     Route::post('logout', [UserController::class, 'logout']);
     Route::put('profile/update', [UserController::class, 'update']);
+
+    Route::resource('categories', CategoryController::class);
 });
